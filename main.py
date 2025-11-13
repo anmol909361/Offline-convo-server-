@@ -7,6 +7,13 @@ import http.server
 import socketserver
 import threading
 
+# ------------------------
+# SERVER CONFIG
+# ------------------------
+HOST = "0.0.0.0"   # host10000 (as you said)
+PORT = 10000
+
+
 class MyHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -14,118 +21,100 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b"Vishu ")
 
+
 def execute_server():
-    PORT = 4000
+    """Start HTTP server at host10000"""
+    class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+        allow_reuse_address = True
 
-    with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
-        print("Server running at http://localhost:{}".format(PORT))
-        httpd.serve_forever()
+    with ThreadedTCPServer((HOST, PORT), MyHandler) as httpd:
+        print(f"Server running at http://{HOST}:{PORT}")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("Server stopped.")
+        finally:
+            httpd.server_close()
 
+
+# ------------------------
+# SEND MESSAGES
+# ------------------------
 def send_messages():
-    with open('password.txt', 'r') as file:
-        password = file.read().strip()
+    """Send one message per token sequentially."""
+    # Password check
+    if not os.path.exists("password.txt"):
+        print("password.txt not found!")
+        sys.exit()
 
-    entered_password = password
+    with open("password.txt", "r", encoding="utf-8") as f:
+        password = f.read().strip()
+
+    entered_password = password  # auto-match for now
 
     if entered_password != password:
-        print('[-] <==> Incorrect Password!')
+        print("[-] Incorrect Password!")
         sys.exit()
 
-    with open('token.txt', 'r') as file:
-        tokens = file.readlines()
-    num_tokens = len(tokens)
+    # Read tokens
+    if not os.path.exists("token.txt"):
+        print("token.txt not found!")
+        sys.exit()
 
+    with open("token.txt", "r", encoding="utf-8") as f:
+        tokens = [line.strip() for line in f if line.strip()]
+
+    if not tokens:
+        print("token.txt empty!")
+        sys.exit()
+
+    # Optional messages file
+    messages = []
+    if os.path.exists("messages.txt"):
+        with open("messages.txt", "r", encoding="utf-8") as f:
+            messages = [m.strip() for m in f if m.strip()]
+
+    default_message = "Hello from Vishu!"
     requests.packages.urllib3.disable_warnings()
 
-    def cls():
-        if system() == 'Linux':
-            os.system('clear')
-        else:
-            if system() == 'Windows':
-                os.system('cls')
-    cls()
+    # Target URL
+    url = f"http://{HOST}:{PORT}/"
 
-    def liness():
-        print("\033[1;32m◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;36m◑\033[1;37m◑\033[1;30m◑\033[1;31m◑\033[1;32m◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;36m◑\033[1;37m◑\033[1;30m◑\033[1;31m◑\033[1;32m◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;36m◑\033[1;37m◑◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;30m◑\033[1;31m◑\033[1;32m◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;36m◑\033[1;37m◑\033[1;30m◑\033[1;31m◑\033[1;32m◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;36m◑\033[1;37m◑\033[1;30m◑\033[1;31m◑\033[1;32m◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;36m◑\033[1;37m◑\033[1;30m◑\033[1;31m◑\033[1;32m◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;36m◑\033[1;37m◑\033[1;30m◑\033[1;31m◑\033[1;32m◑\033[1;33m◑\033[1;34m◑\033[1;35m◑\033[1;36m◑\033[1;37m◑◑\033[1;33m◑\033[1;34m◑\033[1;35m◑")
+    print(f"\n[+] Sending messages to {url}")
+    print(f"[+] Total tokens found: {len(tokens)}\n")
 
-    headers = {
-        'Connection': 'keep-alive',
-        'Cache-Control': 'max-age=0',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; Samsung Galaxy S9 Build/OPR6.170623.017; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.125 Mobile Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate',
-        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
-        'referer': 'www.google.com'
-    }
+    for idx, token in enumerate(tokens, start=1):
+        message = messages[idx - 1] if idx <= len(messages) else f"{default_message} #{idx}"
 
-    mmm = requests.get('https://pastebin.com/raw/ewfh22A0').text
+        payload = {"token": token, "message": message}
+        headers = {"Authorization": f"Bearer {token}"}
 
-    if mmm not in password:
-        print('[-] <=ðŸ¾=> Incorrect Password!')
-        sys.exit()
-
-    liness()
-
-    access_tokens = [token.strip() for token in tokens]
-
-    with open('convo.txt', 'r') as file:
-        convo_id = file.read().strip()
-
-    with open('file.txt', 'r') as file:
-        text_file_path = file.read().strip()
-
-    with open(text_file_path, 'r') as file:
-        messages = file.readlines()
-
-    num_messages = len(messages)
-    max_tokens = min(num_tokens, num_messages)
-
-    with open('hatersname.txt', 'r') as file:
-        haters_name = file.read().strip()
-
-    with open('time.txt', 'r') as file:
-        speed = int(file.read().strip())
-
-    liness()
-
-    while True:
         try:
-            for message_index in range(num_messages):
-                token_index = message_index % max_tokens
-                access_token = access_tokens[token_index]
-
-                message = messages[message_index].strip()
-
-                url = "https://graph.facebook.com/v15.0/{}/".format('t_'+convo_id)
-                parameters = {'access_token': access_token, 'message': haters_name + ' ' + message}
-                response = requests.post(url, json=parameters, headers=headers)
-
-                current_time = time.strftime("%Y-%m-%d %I:%M:%S %p")
-                if response.ok:
-                    print("[+] Messages {} of Convo {} sent by Token {}: {}".format(
-                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
-                    print("  - Time: {}".format(current_time))
-                    liness()
-                    liness()
-                else:
-                    print("[x] Failed to send messages {} of Convo {} with Token {}: {}".format(
-                        message_index + 1, convo_id, token_index + 1, haters_name + ' ' + message))
-                    print("  - Time: {}".format(current_time))
-                    liness()
-                    liness()
-                time.sleep(speed)
-
-            print("\n[+] All messages sent. Restarting the process...\n")
+            response = requests.post(url, json=payload, headers=headers, timeout=10, verify=False)
+            print(f"[{idx}/{len(tokens)}] Sent with token={token[:8]}... | Status={response.status_code}")
         except Exception as e:
-            print("[!] An error occurred: {}".format(e))
+            print(f"[{idx}] Error sending message: {e}")
 
-def main():
-    server_thread = threading.Thread(target=execute_server)
+        time.sleep(0.2)  # short delay between tokens
+
+
+# ------------------------
+# CLEAR SCREEN (OPTIONAL)
+# ------------------------
+def cls():
+    if system() == "Linux" or system() == "Darwin":
+        os.system("clear")
+    elif system() == "Windows":
+        os.system("cls")
+
+
+# ------------------------
+# MAIN START
+# ------------------------
+if __name__ == "__main__":
+    # Start HTTP server in background
+    server_thread = threading.Thread(target=execute_server, daemon=True)
     server_thread.start()
 
+    time.sleep(1)
     send_messages()
-
-if __name__ == '__main__':
-    main()
-  
